@@ -1,0 +1,1 @@
+this file is test data for ece362 hw#2 twist.c and xor.c here we will put some numbers to reverse! 123456789 and here are some characters! abcdefghijklmnopqrstuvwxyz
