@@ -44,6 +44,7 @@ int main(int argc, char const *argv[]) {
 
   int bytes_read;
 
+  //Parse input, open files, and assign b_val.
   for (i = 1; i < argc; i++)
   {
     //printf("looking at argc[%d] = %s", i, argv[i]);
@@ -51,11 +52,25 @@ int main(int argc, char const *argv[]) {
     {
       fd_in = open(argv[i+1], O_RDONLY, 0644);
       i++;
+      if (fd_in < 0)
+      {
+        char input_error[50];
+        strcpy(input_error, "ERROR opening input file. Does it exist?");
+        write(STDERR_FILENO, input_error, strlen(input_error));
+        return -1;
+      }
     }
     else if (!(strcmp(argv[i], "-o")))
     {
       fd_out = open(argv[i+1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
       i++;
+      if (fd_out < 0)
+      {
+        char output_error[50];
+        strcpy(output_error, "ERROR opening output file.");
+        write(STDERR_FILENO, output_error, strlen(output_error));
+        return -1;
+      }
     }
     else if (!(strcmp(argv[i], "-b")))
     {
@@ -78,7 +93,7 @@ int main(int argc, char const *argv[]) {
 
   }
 
-
+  //Read file, output in reverse order immediately.
   while ((bytes_read = read(fd_in, file_buf, b_val)) != 0)
   {
     i = 0;
@@ -89,18 +104,12 @@ int main(int argc, char const *argv[]) {
     {
       //write(STDERR_FILENO, "index = ", 20);
       //write(STDERR_FILENO, &i, sizeof(i));
-
       //printf("position = %d",b_val - i);
       write(fd_out, &file_buf[bytes_read - i - 1], 1);
       i++;
     }
     //write(STDERR_FILENO, "Reading file...", 30);
-
   }
-
-
-
-
 
   return 0;
 }

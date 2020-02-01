@@ -42,7 +42,51 @@ TODO:
 
 int main(int argc, char const *argv[]) {
 
+  int i = 0;
+  int b_val = 10;
 
-  
+  int fd_out = STDOUT_FILENO;
+  int fd_in = STDIN_FILENO;
+  char file_buf[1024];
+  char mask[11];
+
+  int bytes_read;
+
+  //Parse input, open files, and assign mask.
+  for (i = 1; i < argc; i++)
+  {
+    //printf("looking at argc[%d] = %s", i, argv[i]);
+    if (!(strcmp(argv[i], "-i")))
+    {
+      fd_in = open(argv[i+1], O_RDONLY, 0644);
+      i++;
+    }
+    else if (!(strcmp(argv[i], "-o")))
+    {
+      fd_out = open(argv[i+1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      i++;
+    }
+    else if (!(strcmp(argv[i], "-b")))
+    {
+      b_val = atoi(argv[i+1]);
+      if (b_val > 1024)
+      {
+        char b_error[40];
+        strcpy(b_error, "Block value must be less than 1024.\n");
+        write(STDERR_FILENO, b_error, strlen(b_error));
+        return -1;
+      }
+    }
+    else
+    {
+      char bad_entry[100];
+      strcpy(bad_entry, "Invalid entry. Expected arguments: -i <filename> -o <filename> -b <int>\n");
+      write(STDERR_FILENO, bad_entry, strlen(bad_entry));
+      return -1;
+    }
+
+  }
+
+
   return 0;
 }
