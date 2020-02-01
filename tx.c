@@ -45,25 +45,36 @@ int main(int argc, char const *argv[]) {
   int i = 0;
   int b_val = 10;
 
-  int fd_out = STDOUT_FILENO;
-  int fd_in = STDIN_FILENO;
-  char file_buf[1024];
+  //int fd_out = STDOUT_FILENO;
+  //int fd_in = STDIN_FILENO;
+
+  //char file_buf[1024];
+
+  char input_file[200];
+  char output_file[200];
+
   char mask[11];
+  int mask_len;
+  bool mask_rcv = false;
+  bool input_rcv = false;
+  bool output_rcv = false;
 
-  int bytes_read;
+  //int bytes_read;
 
-  //Parse input, open files, and assign mask.
+  //Parse input, open files, and assign b_val and mask.
   for (i = 1; i < argc; i++)
   {
     //printf("looking at argc[%d] = %s", i, argv[i]);
     if (!(strcmp(argv[i], "-i")))
     {
-      fd_in = open(argv[i+1], O_RDONLY, 0644);
+      strcpy(input_file, argv[i+1]);
+      input_rcv = true;
       i++;
     }
     else if (!(strcmp(argv[i], "-o")))
     {
-      fd_out = open(argv[i+1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      strcpy(output_file, argv[i+1]);
+      output_rcv = true;
       i++;
     }
     else if (!(strcmp(argv[i], "-b")))
@@ -77,16 +88,101 @@ int main(int argc, char const *argv[]) {
         return -1;
       }
     }
-    else
+    else //Else it better be the mask.. no way to positively ID it. If we get more than 1 garbage entry will abort tho.
     {
-      char bad_entry[100];
-      strcpy(bad_entry, "Invalid entry. Expected arguments: -i <filename> -o <filename> -b <int>\n");
-      write(STDERR_FILENO, bad_entry, strlen(bad_entry));
-      return -1;
+      if (strlen(argv[i]) > 11) //If it's too long, we are gonna error out.
+      {
+        char bad_mask[60];
+        strcpy(bad_mask, "Bad entry. Mask must be less than 10 chars.");
+        write(STDERR_FILENO, bad_mask, strlen(bad_mask));
+        return -1;
+      }
+      else //Else we're gonna check if we've already got one mask. Maybe multiple garbage inputs. If so error out.
+      {
+        if (mask_rcv == true)
+        {
+            char more_garb[200];
+            strcpy(more_garb, "Too many invalid entries. Usage: xor <mask> -i <filename> -o <filename>. Mask argument must be included. Mask must be less than 10 chars.");
+            write(STDERR_FILENO, more_garb, strlen(more_garb));
+        }
+        else //Else it's probably the mask. Can't positively identify it but its passed the checks so we'll take it.
+        {
+        strcpy(mask, argv[i]);
+        mask_rcv = true;
+        mask_len = strlen(mask);
+        //write(STDERR_FILENO, mask, strlen(mask));
+        }
+      }
+    }
+  }
+  //Error out if no mask, should only be if no args included.
+  if (!mask_rcv)
+  {
+    char no_mask[60];
+    strcpy(no_mask, "No mask argument found. Mask argument must be included.");
+    write(STDERR_FILENO, no_mask, strlen(no_mask));
+    return -1;
+  }
+
+  //Set up the pipe..
+  int pipe_st[2];
+  pid_t pid;
+
+
+  if (pipe(pipe_st) < 0)
+  {
+    char pipe_fail[30];
+    strcpy(pipe_fail, "ERROR creating pipe.");
+    write(STDERR_FILENO, pipe_fail, strlen(pipe_fail));
+  }
+
+  pid = fork();
+
+  //write(STDERR_FILENO, &pid, sizeof(pid));
+
+  if (pid == 0) //This is the parent
+  {
+    //wait(NULL);
+    //We're making the parent = twist.
+    close(pipe_st[0]);
+    close(STDOUT_FILENO);
+    dup(pipe_st[1]);
+    close(pipe_st[1]);
+    if (input_rcv) //Check if we are sending input args
+    {
+      execl("twist", "twist", "-i", input_file, "-b", b_val, NULL);
+    }
+    else //else just taking from STDIN.
+    {
+      execl("twist", "twist", "-b", b_val, NULL);
     }
 
   }
-
+  else if (pid > 0) //This is the child
+  {
+    write(STDERR_FILENO, "THIS IS CHILD", 30);
+    //The child shall be XOR.
+    wait(NULL);
+    close(pipe_st[1]);
+    close(STDIN_FILENO);
+    dup(pipe_st[0]); //XOR reads from the pipe.
+    close(pipe_st[0]);
+    if (output_rcv) //Check if we are sending output args
+    {
+      write(STDERR_FILENO, "CALLING XOR!", 15);
+      execl("xor", "xor", mask, "-o", output_file, NULL);
+    }
+    else //else no output args. STDOUT it is.
+    {
+      execl("xor", "xor", mask, NULL);
+    }
+  }
+  else //Else < 0, this is an error.
+  {
+    char fork_er[40];
+    strcpy(fork_er, "ERROR forking processes.");
+    write(STDERR_FILENO, fork_er, strlen(fork_er));
+  }
 
   return 0;
 }
