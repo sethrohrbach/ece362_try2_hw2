@@ -80,6 +80,7 @@ int main(int argc, char const *argv[]) {
     else if (!(strcmp(argv[i], "-b")))
     {
       b_val = atoi(argv[i+1]);
+      i++;
       if (b_val > 1024)
       {
         char b_error[40];
@@ -136,45 +137,72 @@ int main(int argc, char const *argv[]) {
     write(STDERR_FILENO, pipe_fail, strlen(pipe_fail));
   }
 
+  char b_val_string[5];
+  sprintf(b_val_string, "%d", b_val);
+
   pid = fork();
 
   //write(STDERR_FILENO, &pid, sizeof(pid));
 
-  if (pid == 0) //This is the parent
+  if (pid == 0) //This is the child
   {
     //wait(NULL);
     //We're making the parent = twist.
+
+    /*
     close(pipe_st[0]);
     close(STDOUT_FILENO);
     dup(pipe_st[1]);
     close(pipe_st[1]);
+*/ //Default code..
+
+    // I found dup wasn't reliable, dup2 works better.
+    dup2(pipe_st[1], STDOUT_FILENO);
+    close(pipe_st[0]);
+    close(pipe_st[1]);
+
+
     if (input_rcv) //Check if we are sending input args
     {
-      execl("twist", "twist", "-i", input_file, "-b", b_val, NULL);
+      execl("twist", "twist", "-i", input_file, "-b", b_val_string, NULL);
+      //fprintf(stderr, "Failed to execute twist\n");
     }
     else //else just taking from STDIN.
     {
-      execl("twist", "twist", "-b", b_val, NULL);
+      execl("twist", "twist", "-b", b_val_string, NULL);
+      //fprintf(stderr, "Failed to execute twist\n");
     }
 
   }
-  else if (pid > 0) //This is the child
+  else if (pid > 0) //This is the parent
   {
-    write(STDERR_FILENO, "THIS IS CHILD", 30);
     //The child shall be XOR.
-    wait(NULL);
+
+/*
     close(pipe_st[1]);
     close(STDIN_FILENO);
     dup(pipe_st[0]); //XOR reads from the pipe.
     close(pipe_st[0]);
+    */
+
+
+    dup2(pipe_st[0], STDIN_FILENO);
+    close(pipe_st[1]);
+    close(pipe_st[0]);
+
+
     if (output_rcv) //Check if we are sending output args
     {
-      write(STDERR_FILENO, "CALLING XOR!", 15);
-      execl("xor", "xor", mask, "-o", output_file, NULL);
+      //write(STDERR_FILENO, "CALLING XOR!", 15);
+      execl("./xor", "./xor", mask, "-o", output_file, NULL);
+      //fprintf(stderr, "Failed to execute xor\n");
+
     }
     else //else no output args. STDOUT it is.
     {
-      execl("xor", "xor", mask, NULL);
+      execl("./xor", "./xor", mask, NULL);
+      //fprintf(stderr, "Failed to execute xor\n");
+
     }
   }
   else //Else < 0, this is an error.

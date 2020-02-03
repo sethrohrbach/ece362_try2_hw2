@@ -7,4 +7,4 @@ twist: twist.c
 xor: xor.c
 	gcc -std=c99 -Wall -o xor xor.c
 make clean:
-	rm twist.o xor.o tx.o
+	rm twist xor tx

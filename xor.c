@@ -31,7 +31,7 @@ TODO:
 #include <stdbool.h>
 
 
-#include <stdio.h> //For debugging
+//#include <stdio.h> //For debugging
 
 
 int main(int argc, char const *argv[]) {

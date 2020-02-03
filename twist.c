@@ -35,6 +35,8 @@ TODO:
 
 int main(int argc, char const *argv[]) {
 
+
+
   int i = 0;
   int b_val = 10;
 
@@ -45,7 +47,7 @@ int main(int argc, char const *argv[]) {
   int bytes_read;
 
   //Parse input, open files, and assign b_val.
-  for (i = 1; i < argc; i++)
+  for (i = 1; i < argc - 1; i++)
   {
     //printf("looking at argc[%d] = %s", i, argv[i]);
     if (!(strcmp(argv[i], "-i")))
@@ -75,6 +77,7 @@ int main(int argc, char const *argv[]) {
     else if (!(strcmp(argv[i], "-b")))
     {
       b_val = atoi(argv[i+1]);
+      i++;
       if (b_val > 1024)
       {
         char b_error[40];
@@ -85,6 +88,7 @@ int main(int argc, char const *argv[]) {
     }
     else
     {
+      fprintf(stderr, "BAD ARG = %s", argv[i]);
       char bad_entry[100];
       strcpy(bad_entry, "Invalid entry. Expected arguments: -i <filename> -o <filename> -b <int>\n");
       write(STDERR_FILENO, bad_entry, strlen(bad_entry));
