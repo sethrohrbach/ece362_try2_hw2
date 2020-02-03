@@ -3,22 +3,13 @@ twist.c - this program reverses the order of bytes input, and outputs the bytes 
 
 For Portland State University ECE362 Winter 2020
 Author: Seth Rohrbach
-Last Modified: Jan 22, 2020
+Last Modified: Feb 2, 2020
 
 ----------------------------
 expected arguments:
 -i <filename> : input file name. default is stdin
 -o <filename> : output file name. default is stdout
 -b <num>      : number of characters in a block to reverse. default is 10
-
-TODO:
-
-- DONE - parse input
-
-- DONE - handle system calls for input and output
-
-- DONE - logic to reverse the order of strings
-
 */
 
 
